@@ -1,6 +1,6 @@
 import { BaseEntity } from "./BaseEntity.js";
 
-export class Form extends BaseEntity {
+export class FormEntity extends BaseEntity {
   private constructor(
     id: string,
     createdAt: Date,
@@ -10,9 +10,23 @@ export class Form extends BaseEntity {
     super(id, createdAt, updatedAt);
   }
 
-  static create(params: { id: string; fields: FormFields }): Form {
+  static create(params: { id: string; fields: FormFields }): FormEntity {
     const now = new Date();
-    return new Form(params.id, now, now, params.fields);
+    return new FormEntity(params.id, now, now, params.fields);
+  }
+
+  static from(params: {
+    id: string;
+    createdAt: Date;
+    updatedAt: Date;
+    fields: FormFields;
+  }): FormEntity {
+    return new FormEntity(
+      params.id,
+      params.createdAt,
+      params.updatedAt,
+      params.fields,
+    );
   }
 }
 
