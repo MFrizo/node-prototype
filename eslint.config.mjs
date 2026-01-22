@@ -6,7 +6,7 @@ export default [
   ...tseslint.configs.strict,
   ...tseslint.configs.stylistic,
   {
-    ignores: ['dist/**', '**/*.js'],
+    ignores: ['dist/**', '**/*.js', '.yarn/sdks/**', '.pnp.cjs'],
   },
   {
     files: ['src/**/*.ts'],
