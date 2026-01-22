@@ -64,4 +64,21 @@ export class MongoConnection {
   static get connected(): boolean {
     return this.isConnected;
   }
+
+  /**
+   * Pings the database to verify the connection is alive.
+   * @returns true if ping succeeds, false otherwise
+   */
+  static async ping(): Promise<boolean> {
+    if (!this.isConnected || !this.client) {
+      return false;
+    }
+
+    try {
+      await this.client.db().admin().ping();
+      return true;
+    } catch {
+      return false;
+    }
+  }
 }
