@@ -1,11 +1,14 @@
 import express, { type Express } from "express";
 import { FormController } from "./infrastructure/controllers/FormController.js";
 import { MongoConnection } from "./infrastructure/database/MongoConnection.js";
+import { RabbitMQConnection } from "./infrastructure/messaging/RabbitMQConnection.js";
 
 const app: Express = express();
 const PORT = process.env["PORT"] ?? 3000;
 const MONGODB_URI = process.env["MONGODB_URI"] ?? "mongodb://localhost:27017";
 const MONGODB_DB_NAME = process.env["MONGODB_DB_NAME"] ?? "node-prototype";
+const RABBITMQ_URI =
+  process.env["RABBITMQ_URI"] ?? "amqp://admin:password@localhost:5672";
 
 // Middleware
 app.use(express.json());
@@ -17,6 +20,18 @@ async function initializeDatabase(): Promise<void> {
     console.log(`Connected to MongoDB: ${MONGODB_URI}/${MONGODB_DB_NAME}`);
   } catch (error) {
     console.error("Failed to connect to MongoDB:", error);
+    throw error;
+  }
+}
+
+// Initialize RabbitMQ connection and event dispatcher
+async function initializeRabbitMQ(): Promise<void> {
+  try {
+    const rabbitMQ = RabbitMQConnection.getInstance(RABBITMQ_URI);
+    await rabbitMQ.connect();
+    console.log(`Connected to RabbitMQ: ${RABBITMQ_URI}`);
+  } catch (error) {
+    console.error("Failed to connect to RabbitMQ:", error);
     throw error;
   }
 }
@@ -48,8 +63,9 @@ function setupRoutes(formController: FormController): void {
   app.get("/health", async (_req, res) => {
     const dbConnected = MongoConnection.connected;
     const dbPing = await MongoConnection.ping();
+    const rabbitMQConnected = RabbitMQConnection.getInstance().isConnected();
 
-    const isHealthy = dbConnected && dbPing;
+    const isHealthy = dbConnected && dbPing && rabbitMQConnected;
 
     const status = {
       status: isHealthy ? "ok" : "degraded",
@@ -59,6 +75,10 @@ function setupRoutes(formController: FormController): void {
           connected: dbConnected,
           ping: dbPing,
           status: dbConnected && dbPing ? "healthy" : "unhealthy",
+        },
+        rabbitmq: {
+          connected: rabbitMQConnected,
+          status: rabbitMQConnected ? "healthy" : "unhealthy",
         },
       },
     };
@@ -71,12 +91,14 @@ function setupRoutes(formController: FormController): void {
 process.on("SIGTERM", async () => {
   console.log("SIGTERM received, shutting down gracefully...");
   await MongoConnection.disconnect();
+  await RabbitMQConnection.getInstance().close();
   process.exit(0);
 });
 
 process.on("SIGINT", async () => {
   console.log("SIGINT received, shutting down gracefully...");
   await MongoConnection.disconnect();
+  await RabbitMQConnection.getInstance().close();
   process.exit(0);
 });
 
@@ -84,7 +106,7 @@ process.on("SIGINT", async () => {
 try {
   // Initialize database connection first
   await initializeDatabase();
-
+  await initializeRabbitMQ();
   // Initialize controller after DB is connected
   const formController = new FormController();
 
