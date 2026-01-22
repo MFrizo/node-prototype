@@ -701,7 +701,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@jest/globals@npm:30.2.0":
+"@jest/globals@npm:30.2.0, @jest/globals@npm:^30.2.0":
   version: 30.2.0
   resolution: "@jest/globals@npm:30.2.0"
   dependencies:
@@ -3678,6 +3678,7 @@ __metadata:
   resolution: "node-prototype@workspace:."
   dependencies:
     "@eslint/js": "npm:^9.39.2"
+    "@jest/globals": "npm:^30.2.0"
     "@types/jest": "npm:^30.0.0"
     "@types/node": "npm:^25.0.9"
     eslint: "npm:^9.39.2"
